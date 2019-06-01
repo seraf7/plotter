@@ -1,0 +1,35 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.STD_LOGIC_ARITH.ALL;
+use IEEE.STD_LOGIC_UNSIGNED.ALL;
+
+
+entity figuras is
+    Port ( reloj : in  STD_LOGIC;
+			  M1 : out  STD_LOGIC_VECTOR (3 downto 0); ----Salida del motor
+			  M2 : out  STD_LOGIC_VECTOR (3 downto 0)
+        );
+end figuras;
+
+architecture Behavioral of figuras is
+signal En0, En1, dir0, dir1 : STD_LOGIC;
+
+COMPONENT cuadrado is
+    Port ( reloj : in  STD_LOGIC;
+			  --servo: in STD_LOGIC;
+			  En0, En1, dir0, dir1 : out STD_LOGIC
+         );
+end COMPONENT;
+
+COMPONENT Motor is
+    Port ( reloj : in  STD_LOGIC;
+			  En0, En1, dir0, dir1 : in STD_LOGIC;
+           M1 : out  STD_LOGIC_VECTOR (3 downto 0); ----Salida del motor
+			  M2 : out  STD_LOGIC_VECTOR (3 downto 0)
+         );
+end COMPONENT;
+begin
+caja1: cuadrado port map(reloj,En0, En1, dir0, dir1);
+caja2: Motor port map(reloj,En0, En1, dir0, dir1,M1,M2);
+
+end Behavioral;

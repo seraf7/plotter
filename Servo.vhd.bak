@@ -1,0 +1,101 @@
+--Código para controlar 4 posiciones para un servomotor Futaba
+--implementado en la nexys2.
+--Se considera una frec. de 100Hz (periodo de 10ms) del PWM.
+
+library IEEE;
+
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.STD_LOGIC_ARITH.ALL;
+use IEEE.STD_LOGIC_UNSIGNED.ALL;
+
+
+ENTITY Servo is
+
+	generic( Max: natural := 1000000);
+
+	Port ( clk :  in  STD_LOGIC;--reloj de 50MHz
+
+		boton :  in  STD_LOGIC;--selecciona las 4 posiciones
+		PWM :  out  STD_LOGIC);--terminal donde sale la señal de PWM
+
+	end Servo;
+
+ARCHITECTURE Servo of Servo is
+
+	type Estados is (S0, S1);
+	signal epresente, esiguiente: Estados;
+	
+	signal seg : std_logic;
+	signal PWM_Count: integer range 1 to Max;--500000;
+
+begin
+	
+	divi: process(clk)
+	variable toggle: std_logic:='0';
+	variable cuentaR: integer range 1 to Max := 1;
+	variable cuenta: std_logic_vector(23 downto 0):=X"000000";		--Declaracion de una varible interna de proceso
+	begin
+		if rising_edge (clk) then
+			cuentaR := cuentaR + 1;
+			if cuenta = X"5f5e10" then		--Tiempo para 0.5s,  2BA3487,   04C4B40
+				toggle := NOT(toggle); 
+				cuenta:=X"000000";
+			else
+				cuenta:= cuenta + 1;
+			end if;
+		end if;
+		seg <= toggle; ---modificacion de frecuencia
+		PWM_Count <= cuentaR;
+	end process;
+	
+-----------
+	asmReloj: process(seg)
+	begin
+		if rising_edge(seg) then
+			epresente <= esiguiente;
+		end if;
+	end process;
+
+	
+	asmServo:
+	process(boton,PWM_Count, epresente)
+
+		constant pos1: integer := 50000;  --representa a 1.00ms = 0°
+		constant pos2: integer := 100000; --representa a 2.00ms = 180°
+
+	 begin
+
+			case (epresente) is
+
+					when S0 =>--con el selector en 00 se posiciona en servo en 0°
+
+						if PWM_Count <= pos1 then 
+							PWM <= '1';
+						else
+							PWM <= '0';
+						end if;
+						if boton = '0' then
+							esiguiente <= S1;
+						else
+							esiguiente <= S0;
+						end if;
+
+					
+					when S1 =>-- con el selector en 10 se posiciona en servo en 180°
+
+						if PWM_Count <= pos2 then
+							PWM <= '1';
+						else
+							PWM <= '0';
+						end if;
+						if boton = '0' then
+							esiguiente <= S0;
+						else
+							esiguiente <= S1;
+						end if;
+
+			end case;
+
+	end process;
+
+end Servo;
